@@ -2,7 +2,7 @@ const brain = require('brain.js');
 const readline = require('readline');
 const fs = require('fs');
 
-const stream = fs.createReadStream(__dirname + '/total.bdt');
+const stream = fs.createReadStream(__dirname + '/PBeM.bdt');
 const reader = readline.createInterface(stream, process.stdout);
 const train_amount = 5;
 const games = [];
@@ -10,6 +10,14 @@ const games = [];
 const network = new brain.NeuralNetwork();
 
 const pretrained = false
+const pretrained_model = 'results.json'
+
+const dataset = [];
+const white = 1;
+const black = 0;
+
+let inputsize = 0;
+let outputsize = 0;
 let longest_move=0;
 let index = 0;
 ///Read bdt
@@ -48,7 +56,7 @@ if (!pretrained)
         }
     });
 else
-    network.fromJSON(JSON.parse(fs.readFileSync('results.json', 'utf-8')));
+    network.fromJSON(JSON.parse(fs.readFileSync(pretrained_model, 'utf-8')));
 
 ///Print Pretty input board
 
@@ -67,14 +75,6 @@ function prettyinput(board) {
         console.log(str);
     }
 }
-
-const dataset = [];
-const white = 1;
-const black = 0;
-
-let inputsize = 0;
-let outputsize = 0;
-
 function ConvertMove(string) {
     return string
         .trim()
@@ -87,43 +87,34 @@ reader.on('close', function () {
     if(!pretrained) {
         for (let i = 0; i < Math.min(games.length, train_amount); i++) {
             const game = games[i];
-            const input = new Array(255).fill('00');
+            const input = new Array(225).fill('00');
             const moves = game.move;
             const winner = game.winner;
             let turn = black;
             for (let j = 0; j < moves.length; j++) {
-                const output = new Array(15).fill(0).map(() => new Array(15).fill(0));
                 const move = moves[j];
-                output[parseInt(moves[j][0], 16)-1][parseInt(moves[j][1], 16)-1] = winner === turn ? 1 : 0;
-
-                let newoutput = [];
-                for (let a = 0; a < output.length; a++) {
-                    newoutput = newoutput.concat(output[a]);
-                }
-                newoutput = JSON.parse(`{"${move}": ${winner === turn ? 1 : 0}}`)
-                console.log(newoutput);
+                const output = JSON.parse(`{"${move}": ${winner === turn ? 1 : 0}}`)
                 const data = {
                     input: input,
-                    output: newoutput
+                    output: output
                 }
                 const clonedata = JSON.parse(JSON.stringify(data));
                 input[j] = moves[j];
                 dataset.push(clonedata);
                 turn = turn === white ? black : white;
             }
-            if(i%1 === 0) {
-                console.log('Train #' + (i + 1) + "/" + (Math.min(games.length, train_amount)));
-                console.log('Dataset Size : '+dataset.length);
-            }
+            console.log('Setting Game #' + (i + 1) + " of " + (Math.min(games.length, train_amount)));
+            console.log('Dataset Size : '+dataset.length);
         }
-        console.log(dataset);
         network.train(dataset, {iterations: 3, log:true, logPeriod:3});
-        fs.writeFile("results.json", JSON.stringify(network.toJSON()), function (err) {
+        fs.writeFile(pretrained_model, JSON.stringify(network.toJSON()), function (err) {
             if (err) throw err;
             console.log('The "data to write" was appended to file!');
         });
     }
-    const input = ['88', '89'];
+    const input = new Array(225).fill('00');
+    input[0] = '88';
+    input[1] = '89';
     const output = network.run(input);
     let best = 0;
     let bestwhat = "0,0";
