@@ -4,7 +4,7 @@ const fs = require('fs');
 
 const stream = fs.createReadStream(__dirname + '/PBeM.bdt');
 const reader = readline.createInterface(stream, process.stdout);
-const train_amount = 5;
+const train_amount = 2000;
 const games = [];
 
 const network = new brain.NeuralNetwork();
@@ -106,7 +106,7 @@ reader.on('close', function () {
             console.log('Setting Game #' + (i + 1) + " of " + (Math.min(games.length, train_amount)));
             console.log('Dataset Size : '+dataset.length);
         }
-        network.train(dataset, {iterations: 3, log:true, logPeriod:3});
+        network.train(dataset, {iterations: 3, log:true, logPeriod:3, errorThresh: 0.000000000005});
         fs.writeFile(pretrained_model, JSON.stringify(network.toJSON()), function (err) {
             if (err) throw err;
             console.log('The "data to write" was appended to file!');
