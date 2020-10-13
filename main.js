@@ -20,7 +20,7 @@ let inputsize = 0;
 let outputsize = 0;
 let longest_move=0;
 let index = 0;
-///Read bdt
+///Read bdt from file
 if (!pretrained)
     reader.on('line', function (line) {
         const game = [];
